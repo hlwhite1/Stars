@@ -3,10 +3,9 @@
     <meta description="A light script of a shooting star, inspired by Star Citizen" />
     <meta publisher="Hunter White" />
     <meta property="colorspeed" label="Color Cycle Speed" type="number" min="1" max="10" default="6">
-    <meta property="starspeed" label="Star Speed" type="number" min="1" max="100" default="50">
   </head>
   
-  <body style="margin: 0; padding: 0;">
+  <body style="margin: 0; padding: 0;background:black;">
     <canvas id="rgbCanvas" width="320" height="200"></canvas>
   </body>
   
@@ -16,27 +15,26 @@
     var ctx = c.getContext('2d');
     const width = 320;
     const height = 200;
-  // ctx.clearRect(0, 0, width, height); // clear canvas
-    ctx.fillStyle = 'black';
+    ctx.fillStyle = 'black'; 
     ctx.fillRect(0, 0, width, height);
   
+    // Declare variables
     const FPS = 60;
     const dustArray = [];  
+  
     let hue = 0;
   
-    var cx = width/2; // change to random later?
+    var cx = width/2; // potential to change to random starting place
     var cy = height/2;
-    var fill = '#bcc9d6'; //change toe Signal RGB slider later
+    var fill = '#bcc9d6'; //potential to change it to a color picker or based on game capture
     var angle = (2 * Math.PI) / 4;
-    var outerRadius = 20;
-    var innerRadius = 5;
+    var outerRadius = 20; // potential to change it to effects number slider
+    var innerRadius = 5; // potential to change it to effect number slider
     var rotate = 0;
-
-
-  
     var xv = Math.floor(Math.random() * 76 + 25) / FPS;
     var yv = Math.floor(Math.random() * 76 + 25) / FPS;
   
+    // Random starting direction of star
     if (Math.floor(Math.random() * 2) == 0) {
       xv = -xv;
     }
@@ -44,32 +42,35 @@
       yv = -yv;
     }
   
+    // Helper function to draw star - potential to change to any type of star
     const drawLine = (radius, angle, action) => {
-      // use cosine to get horizontal coordinate
       let x = cx + radius * Math.cos(angle);
-      // use sin to get vertical coordinate
       let y = cy + radius * Math.sin(angle);
       ctx[action](x, y);
     }
   
+    // Creates our main star
     function drawStar () {
-        ctx.beginPath();
-        drawLine(outerRadius, rotate, 'moveTo');
-        for (let i = 0; i <= 4; i++) {
-          let outerAngle = i * angle + 0;
-          let innerAngle = outerAngle + angle / 2;
-          drawLine(outerRadius, outerAngle, 'lineTo');
-          drawLine(innerRadius, innerAngle, 'lineTo');
-        }
-        ctx.fillStyle = fill;
-        ctx.fill();
+      ctx.beginPath();
+      drawLine(outerRadius, rotate, 'moveTo');
+      for (let i = 0; i <= 4; i++) { // This determines the number of points on the star, potential to change 4 to a variable and allow users to customize their star
+        let outerAngle = i * angle + 0;
+        let innerAngle = outerAngle + angle / 2;
+        drawLine(outerRadius, outerAngle, 'lineTo');
+        drawLine(innerRadius, innerAngle, 'lineTo');
       }
-      function newDust(){
-        for(let i = 0; i < 0.5; i++) {
-          dustArray.push(new Dust());
-        }
-      }
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
   
+    // Creates all dust particles that will follow the main star
+    function newDust(){
+      for(let i = 0; i < .1; i++) {
+        dustArray.push(new Dust());
+      }
+    }
+  
+    // Animates the main star and keeps it within canvas
     function moveStar () {
       cx += xv;
       cy += yv;
@@ -88,24 +89,24 @@
       }
       ctx.clearRect(0, 0, width, height); 
       drawStar();
-      // newDust();
     };
   
+    // Creates an individual dust particle
     class Dust{
       constructor(){
         this.x = cx;
         this.y = cy;
-        this.size = Math.random() * 6 + 1;
+        this.size = Math.random() * 50 + 1;
         this.speedX = Math.random() * 3 - 1.5;
         this.speedY = Math.random() * 3 - 1.5;
         this.color = 'hsl(' + hue + ', 100%, 50%)';
       }
-      moveDust(){
+      moveDust(){ // sets dust particle movement
         this.x += this.speedX;
         this.y += this.speedY;
-        if (this.size > 0.2) this.size -= 0.1;
+        if (this.size > 0.2) this.size -= 0.1; // shrinks dust particles
       }
-      createDust(){
+      createDust(){ // draws dust particle 
         if (cx - outerRadius < 0 && xv < 0) {
             ctx.fillStyle = this.color;
             ctx.beginPath();
@@ -113,7 +114,7 @@
             ctx.fill();
         }
         if (cx + outerRadius > width && xv > 0) {
-            ctx.fillStyle = this.color;
+          ctx.fillStyle = this.color;
             ctx.beginPath();
             ctx.arc(this.x,this.y,this.size,0,Math.PI *2);
             ctx.fill();
@@ -133,6 +134,7 @@
       }
     }
   
+    // Event handler for dust particles connecting
     function handleDust(){
       for(let i = 0; i < dustArray.length; i++){
         dustArray[i].moveDust();
@@ -141,36 +143,34 @@
             const dx = dustArray[i].x - dustArray[j].x;
             const dy = dustArray[i].y - dustArray[j].y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < 50){
+            if (distance < 50){ // draws connecting line
                 ctx.beginPath();
                 ctx.strokeStyle = dustArray[i].color;
-                ctx.lineWidth = 0.2;
+                ctx.lineWidth = 0.1;
                 ctx.moveTo(dustArray[i].x,dustArray[i].y);
                 ctx.lineTo(dustArray[j].x,dustArray[j].y);
                 ctx.stroke();
                 ctx.closePath();
             }
         }
-        if(dustArray[i].size <= 0.3){
+        if(dustArray[i].size <= .25){
           dustArray.splice(i,1);
           i--;
         }
-      }
+      }    
     }
   
-    // setInterval(newDust,1000/FPS);
+    // Animate moving the main star first
     setInterval(moveStar, 1000 / FPS);
   
+    // Animate the dust and color 
     function animate () {
-    //   ctx.fillStyle = 'rgba(0,0,0,0.02)';
-    //   ctx.fillRect(0,0,width,height);
       newDust();
       handleDust();
-      hue+=2;
+      hue+= 2;
       window.requestAnimationFrame(animate);
     }
   
-    // this has to be the last line of your code
     window.requestAnimationFrame(animate);
   </script>
   
